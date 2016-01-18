@@ -17,20 +17,20 @@ varying vec3 normal;
 
 // Schlick's Fresnel approximation
 float F(vec3 l, vec3 h) {
-	// Exercise 6 - Implement here:
-	return 1.0;
+	return spec + (1.0 - spec) * pow((1.0 - dot(l, h)), 5.0);
 }
 
 // Trowbridge-Reitz normal distribution term
 float D(vec3 n, vec3 h) {
-	// Exercise 6 - Implement here:
-	return 1.0;
+	float pi = 3.14159265358979323846264;
+	return roughness * roughness / (pi * pow(dot(n, h) * dot(n, h) * (roughness * roughness - 1.0) + 1.0, 2.0));
 }
 
 // Cook and Torrance's geometry factor
 float G(vec3 l, vec3 v, vec3 h, vec3 n) {
-	// Exercise 6 - Implement here:
-	return 1.0;
+	float term1 = (2.0 * dot(n, h) * dot(n, v)) / dot(v, h);
+	float term2 = (2.0 * dot(n, h) * dot(n, l)) / dot(v, h);
+	return min(1.0, min(term1, term2));
 }
 
 void kore() {
@@ -46,8 +46,7 @@ void kore() {
 	vec3 h = l + v;
 	h = normalize(h);
 	// determine the BRDF
-	// Exercise 6: Calculate the correct value here
-	float f = 1.0;
+	float f = (F(l, h) * G(l, v, h, n) * D(n, h)) / (4.0 * dot(n, l) * dot(n, v));
 	// determine texel
 	vec3 t = pow(texture2D(tex, texCoord).rgb, vec3(2.2));
 	
