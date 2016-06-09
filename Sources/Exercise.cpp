@@ -1,6 +1,5 @@
 #include "pch.h"
 
-#include <Kore/Application.h>
 #include <Kore/IO/FileReader.h>
 #include <Kore/Math/Core.h>
 #include <Kore/System.h>
@@ -243,15 +242,15 @@ namespace {
 		}
 	}
 	
-	void mouseMove(int x, int y, int movementX, int movementY) {
+	void mouseMove(int windowId, int x, int y, int movementX, int movementY) {
 
 	}
 	
-	void mousePress(int button, int x, int y) {
+	void mousePress(int windowId, int button, int x, int y) {
 
 	}
 
-	void mouseRelease(int button, int x, int y) {
+	void mouseRelease(int windowId, int button, int x, int y) {
 
 	}
 
@@ -301,26 +300,41 @@ namespace {
 }
 
 int kore(int argc, char** argv) {
-	Application* app = new Application(argc, argv, width, height, 0, false, "Exercise6");
-	
+	// @@TODO: Remove SimpleGraphics?
+	Kore::System::setName("TUD Game Technology - ");
+	Kore::System::setup();
+	Kore::WindowOptions options;
+	options.title = "Solution 6";
+	options.width = width;
+	options.height = height;
+	options.x = 100;
+	options.y = 100;
+	options.targetDisplay = -1;
+	options.mode = WindowModeWindow;
+	options.rendererOptions.depthBufferBits = 16;
+	options.rendererOptions.stencilBufferBits = 8;
+	options.rendererOptions.textureFormat = 0;
+	options.rendererOptions.antialiasing = 0;
+	Kore::System::initWindow(options);
+
 	init();
 
-	app->setCallback(update);
+	Kore::System::setCallback(update);
 
-	startTime = System::time();
 	Kore::Mixer::init();
 	Kore::Audio::init();
-	//Kore::Mixer::play(new SoundStream("back.ogg", true));
-	
+
+
+	startTime = System::time();
+
+
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;
 	Mouse::the()->Move = mouseMove;
 	Mouse::the()->Press = mousePress;
 	Mouse::the()->Release = mouseRelease;
 
-	app->start();
+	Kore::System::start();
 
-	delete app;
-	
 	return 0;
 }
