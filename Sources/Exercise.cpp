@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <Kore/System.h>
 #include <Kore/IO/FileReader.h>
 #include <Kore/Math/Core.h>
 #include <Kore/System.h>
@@ -8,9 +9,8 @@
 #include <Kore/Audio/Mixer.h>
 #include <Kore/Graphics/Image.h>
 #include <Kore/Graphics/Graphics.h>
+#include <Kore/Log.h>
 #include "ObjLoader.h"
-#include <algorithm>
-#include <iostream>
 
 using namespace Kore;
 
@@ -34,9 +34,9 @@ public:
 		}
 		vertexBuffer->unlock();
 
-		indexBuffer = new IndexBuffer(mesh->numFaces * 3);
+		indexBuffer = new IndexBuffer(mesh->numIndices);
 		int* indices = indexBuffer->lock();
-		for (int i = 0; i < mesh->numFaces * 3; i++) {
+		for (int i = 0; i < mesh->numIndices; i++) {
 			indices[i] = mesh->indices[i];
 		}
 		indexBuffer->unlock();
@@ -89,9 +89,9 @@ namespace {
 	ConstantLocation modeLocation;
 
 	vec3 eye;
-	vec3 globe = vec3(0, 1.95f, -2.5f);
-	//vec3 globe = vec3(0.7f, 1.2f, -0.2f);
-	vec3 light = vec3(0, 1.95f, -3.0f);
+	vec3 globe = vec3(0, 0, 0);
+	vec3 light = vec3(0, 1.5f, -3.0f);
+
 	
 	bool left, right, up, down, forward, backward;
 	int mode = 0;
@@ -142,7 +142,7 @@ namespace {
 		// vec3(0, 2, -3), vec3(0, 2, 0)
 		V = mat4::lookAt(eye, vec3(eye.x(), eye.y(), eye.z() + 3), vec3(0, 1, 0));
 		//V = mat4::lookAt(eye, globe, vec3(0, 1, 0)); //rotation test, can be deleted
-		P = mat4::Perspective(60, (float)width / (float)height, 0.1f, 100);
+		P = mat4::Perspective(Kore::pi * 2 / 3, (float)width / (float)height, 0.1f, 100);
 		Graphics::setMatrix(vLocation, V);
 		Graphics::setMatrix(pLocation, P);
 
@@ -181,43 +181,43 @@ namespace {
 		}
 		else if (code == Key_B) {
 			mode = 0;
-			std::cout << "Complete BRDF" << std::endl;
+			log(Info, "Complete BRDF");
 		}
 		else if (code == Key_F) {
 			mode = 1;
-			std::cout << "Schlick's Fresnel approximation" << std::endl;
+			log(Info, "Schlick's Fresnel approximation");
 		}
 		else if (code == Key_D) {
 			mode = 2;
-			std::cout << "Trowbridge-Reitz normal distribution term" << std::endl;
+			log(Info, "Trowbridge-Reitz normal distribution term");
 		}
 		else if (code == Key_G) {
 			mode = 3;
-			std::cout << "Cook and Torrance's geometry factor" << std::endl;
+			log(Info, "Cook and Torrance's geometry factor");
 		}
 		else if (code == Key_T) {
 			toggle = !toggle;
 		}
 		else if (code == Key_R) {
 			if (toggle) {
-				roughness = std::max(roughness - 0.1f, 0.0f);
+				roughness = Kore::max(roughness - 0.1f, 0.0f);
 			}
 			else {
-				roughness = std::min(roughness + 0.1f, 1.0f);
+				roughness = Kore::min(roughness + 0.1f, 1.0f);
 			}
-			std::cout << "Roughness: " << roughness << std::endl;
+			log(Info, "Roughness: %f", roughness);
 		}
 		else if (code == Key_E) {
 			if (toggle) {
-				specular = std::max(specular - 0.1f, 0.0f);
+				specular = Kore::max(specular - 0.1f, 0.0f);
 			}
 			else {
-				specular = std::min(specular + 0.1f, 1.0f);
+				specular = Kore::min(specular + 0.1f, 1.0f);
 			}
-			std::cout << "Specular: " << specular << std::endl;
+			log(Info, "Specular: %f", specular);
 		}
 		else if (code == Key_Space) {
-			std::cout << "hi" << std::endl;
+			log(Info, "hi");
 		}
 	}
 	
@@ -242,15 +242,15 @@ namespace {
 		}
 	}
 	
-	void mouseMove(int windowId, int x, int y, int movementX, int movementY) {
+	void mouseMove(int window, int x, int y, int movementX, int movementY) {
 
 	}
 	
-	void mousePress(int windowId, int button, int x, int y) {
+	void mousePress(int window, int button, int x, int y) {
 
 	}
 
-	void mouseRelease(int windowId, int button, int x, int y) {
+	void mouseRelease(int window, int button, int x, int y) {
 
 	}
 
@@ -286,48 +286,33 @@ namespace {
 		objects[1]->M = mat4::Translation(light.x(), light.y(), light.z());
 
 		Graphics::setRenderState(DepthTest, true);
+		Graphics::setRenderState(DepthWrite, true);
 		Graphics::setRenderState(DepthTestCompare, ZCompareLess);
+		Graphics::setRenderState(BackfaceCulling, true);
 
 		Graphics::setTextureAddressing(tex, Kore::U, Repeat);
 		Graphics::setTextureAddressing(tex, Kore::V, Repeat);
 		
-		std::cout << "Showing complete BRDF" << std::endl;
-		std::cout << "Roughness: " << roughness << std::endl;
-		std::cout << "Specular: " << specular << std::endl;
+		log(Info, "Showing complete BRDF");
+		log(Info, "Roughness: %f", roughness);
+		log(Info, "Specular: %f", specular);
 
 		eye = vec3(0, 2, -3);
 	}
 }
 
 int kore(int argc, char** argv) {
-	// @@TODO: Remove SimpleGraphics?
-	Kore::System::setName("TUD Game Technology - ");
-	Kore::System::setup();
-	Kore::WindowOptions options;
-	options.title = "Solution 6";
-	options.width = width;
-	options.height = height;
-	options.x = 100;
-	options.y = 100;
-	options.targetDisplay = -1;
-	options.mode = WindowModeWindow;
-	options.rendererOptions.depthBufferBits = 16;
-	options.rendererOptions.stencilBufferBits = 8;
-	options.rendererOptions.textureFormat = 0;
-	options.rendererOptions.antialiasing = 0;
-	Kore::System::initWindow(options);
-
+	Kore::System::init("Solution 7", width, height);
+	
 	init();
 
 	Kore::System::setCallback(update);
 
+	startTime = System::time();
 	Kore::Mixer::init();
 	Kore::Audio::init();
-
-
-	startTime = System::time();
-
-
+	//Kore::Mixer::play(new SoundStream("back.ogg", true));
+	
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;
 	Mouse::the()->Move = mouseMove;
@@ -335,6 +320,6 @@ int kore(int argc, char** argv) {
 	Mouse::the()->Release = mouseRelease;
 
 	Kore::System::start();
-
+	
 	return 0;
 }
