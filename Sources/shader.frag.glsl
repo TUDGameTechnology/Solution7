@@ -1,6 +1,4 @@
-#ifdef GL_ES
-precision mediump float;
-#endif
+#version 450
 
 uniform sampler2D tex;
 
@@ -11,9 +9,11 @@ uniform float spec;
 uniform float roughness;
 uniform int mode;
 
-varying vec3 position;
-varying vec2 texCoord;
-varying vec3 normal;
+in vec3 position;
+in vec2 texCoord;
+in vec3 normal;
+
+out vec4 FragColor;
 
 // Schlick's Fresnel approximation
 float F(vec3 l, vec3 h) {
@@ -33,7 +33,7 @@ float G(vec3 l, vec3 v, vec3 h, vec3 n) {
 	return min(1.0, min(term1, term2));
 }
 
-void kore() {
+void main() {
 	// determine the normal vector
 	vec3 n = normalize(normal);
 	// determine the light vector
@@ -48,7 +48,7 @@ void kore() {
 	// determine the BRDF
 	float f = (F(l, h) * G(l, v, h, n) * D(n, h)) / (4.0 * dot(n, l) * dot(n, v));
 	// determine texel
-	vec3 t = pow(texture2D(tex, texCoord).rgb, vec3(2.2));
+	vec3 t = pow(texture(tex, texCoord).rgb, vec3(2.2));
 	
 	// determine view dependend on mode
 	vec3 rgb;
@@ -71,5 +71,5 @@ void kore() {
 	//vec3 rgb = t * dot(l, n);
 	//vec3 rgb = (n + 1.0) / 2.0;
 
-	gl_FragColor = vec4(pow(rgb, vec3(1.0 / 2.2)), 1);
+	FragColor = vec4(pow(rgb, vec3(1.0 / 2.2)), 1);
 }
